@@ -19,8 +19,8 @@ use MoonShine\Laravel\Pages\ProfilePage;
 
 return [
     'title' => env('MOONSHINE_TITLE', 'VSchocolate'),
-    'logo' => 'storage/logo.png',
-    'logo_small' => 'storage/logo-small.png',
+    'logo' => 'storage/resource/logo.png',
+    'logo_small' => 'storage/resource/logo-small.png',
 
 
     // Default flags
