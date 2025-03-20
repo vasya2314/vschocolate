@@ -72,6 +72,16 @@ final class MoonShineLayout extends AppLayout
         return 'Сделано с любовью для <a href="https://vk.com/id134770711" target="_blank">тебя</a>';
     }
 
+    protected function getFaviconComponent(): Favicon
+    {
+        return Favicon::make()
+            ->customAssets([
+                'apple-touch' => url('favicon.png'),
+                '32' => url('favicon-32.png'),
+                '16' => url('favicon-16.png'),
+            ]);
+    }
+
     public function build(): Layout
     {
         return parent::build();
