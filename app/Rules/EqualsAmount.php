@@ -19,8 +19,7 @@ class EqualsAmount implements ValidationRule
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if(rubToKop($value) > rubToKop($this->amount))
-        {
-            
+        { 
             $fail('Значение не может быть больше, чем ' . $this->amount);
         }
     }
