@@ -20,6 +20,7 @@ class EqualsAmount implements ValidationRule
     {
         if(rubToKop($value) > rubToKop($this->amount))
         {
+            
             $fail('Значение не может быть больше, чем ' . $this->amount);
         }
     }
