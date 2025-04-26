@@ -4,16 +4,11 @@ declare(strict_types=1);
 
 namespace App\MoonShine\Pages;
 
-//use App\Models\Order;
-//use MoonShine\Apexcharts\Components\LineChartMetric;
 use App\Models\Order;
 use MoonShine\Apexcharts\Components\LineChartMetric;
 use MoonShine\Laravel\Pages\Page;
 use MoonShine\Contracts\UI\ComponentContract;
 use MoonShine\UI\Components\Title;
-use Ramsey\Collection\Collection;
-
-//use MoonShine\UI\Components\Metrics\Wrapped\ValueMetric;
 
 #[\MoonShine\MenuManager\Attributes\SkipMenu]
 
@@ -38,7 +33,7 @@ class Dashboard extends Page
      * @return list<ComponentContract>
      */
     protected function components(): iterable
-	{
+    {
         return [
             Title::make('График заказов за все время', 3)->class('mb-4'),
             LineChartMetric::make('Заказы')
@@ -46,12 +41,16 @@ class Dashboard extends Page
                     'Сумма заказов' => Order::query()
                         ->selectRaw('SUM(amount_total) as sum, DATE_FORMAT(created_at, "%d.%m.%Y") as date')
                         ->groupBy('date')
-                        ->pluck('sum','date')
+                        ->pluck('sum', 'date')
                         ->map(function ($sum, $date) {
+
+                            dump($date, $sum);
+
                             return kopToRub($sum);
                         })
-                        ->toArray()
-                ], type: fn() => 'area')
+                        ->toArray(),
+                ])
+                ->withoutSortKeys(),
         ];
-	}
+    }
 }
