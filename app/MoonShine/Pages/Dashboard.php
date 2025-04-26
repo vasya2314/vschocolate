@@ -43,7 +43,7 @@ class Dashboard extends Page
             Title::make('График заказов за все время', 3)->class('mb-4'),
             LineChartMetric::make('Заказы')
                 ->line([
-                    'Сумма заказа' => Order::query()
+                    'Сумма заказов' => Order::query()
                         ->selectRaw('SUM(amount_total) as sum, DATE_FORMAT(created_at, "%d.%m.%Y") as date')
                         ->groupBy('date')
                         ->pluck('sum','date')
