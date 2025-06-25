@@ -4,13 +4,8 @@ declare(strict_types=1);
 
 namespace App\MoonShine\Resources;
 
-use App\Http\Requests\ClientRequest;
-use App\Models\Order;
-use App\Models\OrderContent;
 use App\Rules\UniquePhone;
-use Illuminate\Database\Eloquent\Model;
 use App\Models\Client;
-
 use MoonShine\Laravel\Enums\Action;
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\Support\ListOf;

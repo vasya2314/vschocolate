@@ -43,7 +43,6 @@ class Dashboard extends Page
                         ->groupBy('date')
                         ->pluck('sum', 'date')
                         ->map(function ($sum, $date) {
-
                             return kopToRub($sum);
                         })
                         ->toArray(),

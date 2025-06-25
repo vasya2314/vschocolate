@@ -31,7 +31,6 @@ class FormOrder extends FormPage
      */
     protected function fields(): iterable
     {
-
         return [];
     }
 
