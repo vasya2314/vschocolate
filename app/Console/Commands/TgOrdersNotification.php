@@ -42,7 +42,7 @@ class TgOrdersNotification extends Command
         GetTgStatusAction $getTgStatusAction,
     ): void
     {
-        if($getTgStatusAction->handle() == TgStatus::DISABLE)
+        if($getTgStatusAction->handle() == TgStatus::DISABLE) exit();
 
         $this->logger = Log::build([
             'driver' => 'single',
