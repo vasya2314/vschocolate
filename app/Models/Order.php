@@ -21,8 +21,8 @@ class Order extends Model
 
     private const STATUSES = [
         self::STATUS_ACCEPT => 'Принят',
-        self::STATUS_COMPLETE => 'Выполнен',
-        self::STATUS_PROGRESS => 'В процессе выполнения',
+        self::STATUS_COMPLETE => 'Исполнен',
+        self::STATUS_PROGRESS => 'Выполнен',
         self::STATUS_CANCELED => 'Отменен',
     ];
 
