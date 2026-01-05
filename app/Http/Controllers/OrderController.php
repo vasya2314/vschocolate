@@ -23,7 +23,6 @@ use Illuminate\Http\RedirectResponse;
 
 class OrderController extends Controller
 {
-
     public function index(IndexRequest $request): View|Application|Factory
     {
         $ordersFilter = app()->make(OrderFilter::class, ['queryParams' => array_filter($request->validated())]);
@@ -36,8 +35,11 @@ class OrderController extends Controller
                 $query->withTrashed();
             }])
             ->filter($ordersFilter)
-            ->orderBy('deleted_at')
-            ->latest()
+            ->orderByRaw("FIELD(status, ?, ?) desc", [
+                Order::STATUS_ACCEPT,
+                Order::STATUS_PROGRESS
+            ])
+            ->orderBy('date_issue', 'desc')
             ->paginate(25);
 
         $statuses = Order::statuses();
