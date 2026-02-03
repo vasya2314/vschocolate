@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'superAdmin' => SuperAdminMiddleware::class,
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\TrustProxies::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (BusinessException $e) {
