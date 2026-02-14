@@ -28,18 +28,21 @@ class OrderController extends Controller
         $ordersFilter = app()->make(OrderFilter::class, ['queryParams' => array_filter($request->validated())]);
 
         $orders = Order::withTrashed()
-            ->with(['client' => function ($query) {
-                $query->withTrashed();
-            }])
-            ->with(['products' => function ($query) {
-                $query->withTrashed();
-            }])
+            ->with(['client' => fn($q) => $q->withTrashed()])
+            ->with(['products' => fn($q) => $q->withTrashed()])
             ->filter($ordersFilter)
-            ->orderByRaw("FIELD(status, ?, ?) desc", [
+            ->orderByRaw("
+                FIELD(status, ?, ?) DESC,
+                CASE
+                    WHEN status IN (?, ?) THEN UNIX_TIMESTAMP(date_issue)
+                    ELSE -UNIX_TIMESTAMP(date_issue)
+                END ASC
+            ", [
+                Order::STATUS_ACCEPT,
+                Order::STATUS_PROGRESS,
                 Order::STATUS_ACCEPT,
                 Order::STATUS_PROGRESS
             ])
-            ->orderBy('date_issue', 'desc')
             ->paginate(25);
 
         $statuses = Order::statuses();
