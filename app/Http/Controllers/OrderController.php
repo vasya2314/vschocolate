@@ -31,6 +31,7 @@ class OrderController extends Controller
             ->with(['client' => fn($q) => $q->withTrashed()])
             ->with(['products' => fn($q) => $q->withTrashed()])
             ->filter($ordersFilter)
+            ->orderByRaw('deleted_at IS NOT NULL ASC')
             ->orderByRaw("
                 FIELD(status, ?, ?) DESC,
                 CASE
