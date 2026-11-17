@@ -109,7 +109,6 @@ jobs:
             --exclude='/.env' \
             --exclude='/storage/' \
             --exclude='/public/storage' \
-            --exclude='/bootstrap/cache/*.php' \
             release/ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
 
       - name: Post-deploy (migrate, cache, up)
