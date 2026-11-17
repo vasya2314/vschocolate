@@ -1,0 +1,134 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ vars.PHP_VERSION || '8.4' }}
+          extensions: mbstring, bcmath, gd, zip, pdo_mysql, intl
+          tools: composer:v2
+          coverage: none
+
+      - name: Install Composer dependencies (prod)
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Pack release
+        run: |
+          tar --exclude='./.git' \
+              --exclude='./.github' \
+              --exclude='./.idea' \
+              --exclude='./node_modules' \
+              --exclude='./tests' \
+              --exclude='./_docker' \
+              --exclude='./tmp' \
+              --exclude='./storage' \
+              --exclude='./public/storage' \
+              --exclude='./public/hot' \
+              --exclude='./.env' \
+              --exclude='./release.tar.gz' \
+              -czf release.tar.gz .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release.tar.gz
+          retention-days: 3
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSHPASS: ${{ secrets.SSH_PASSWORD }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      PHP_BIN: ${{ vars.PHP_BIN || 'php' }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+
+      - name: Unpack release
+        run: mkdir release && tar -xzf release.tar.gz -C release
+
+      - name: Install sshpass
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq sshpass rsync
+
+      - name: Add host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      # Safety: rsync --delete must never run against a wrong directory (e.g. $HOME)
+      - name: Check deploy path & maintenance mode on
+        run: |
+          sshpass -e ssh -p "$SSH_PORT" -o PubkeyAuthentication=no "$SSH_USER@$SSH_HOST" "
+            set -e
+            mkdir -p '$DEPLOY_PATH'
+            cd '$DEPLOY_PATH'
+            if [ -n \"\$(ls -A | grep -vx '.env')\" ] && [ ! -f artisan ]; then
+              echo 'DEPLOY_PATH is not empty and has no artisan — refusing to deploy there' >&2
+              exit 1
+            fi
+            if [ -f artisan ]; then $PHP_BIN artisan down --retry=15 || true; fi
+          "
+
+      - name: Sync files (rsync)
+        run: |
+          sshpass -e rsync -az --delete \
+            -e "ssh -p $SSH_PORT -o PubkeyAuthentication=no" \
+            --exclude='/.env' \
+            --exclude='/storage/' \
+            --exclude='/public/storage' \
+            --exclude='/bootstrap/cache/*.php' \
+            release/ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
+
+      - name: Post-deploy (migrate, cache, up)
+        run: |
+          sshpass -e ssh -p "$SSH_PORT" -o PubkeyAuthentication=no "$SSH_USER@$SSH_HOST" "
+            set -e
+            cd '$DEPLOY_PATH'
+            mkdir -p storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+            $PHP_BIN artisan package:discover --ansi
+            $PHP_BIN artisan storage:link || true
+            $PHP_BIN artisan migrate --force
+            $PHP_BIN artisan optimize:clear
+            $PHP_BIN artisan optimize
+            $PHP_BIN artisan up
+          "
+
+      - name: Bring app back up on failure
+        if: failure()
+        run: |
+          sshpass -e ssh -p "$SSH_PORT" -o PubkeyAuthentication=no "$SSH_USER@$SSH_HOST" \
+            "cd '$DEPLOY_PATH' && $PHP_BIN artisan up" || true
