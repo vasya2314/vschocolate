@@ -22,8 +22,7 @@ class Alert extends Component
         {
             $this->type = self::TYPE_SUCCESS;
             $this->message = session(self::TYPE_SUCCESS);
-        } elseif (!$type && session()->has(self::TYPE_ERROR))
-            {
+        } elseif (!$type && session()->has(self::TYPE_ERROR)) {
             $this->type = self::TYPE_ERROR;
             $this->message = session(self::TYPE_ERROR);
         }
