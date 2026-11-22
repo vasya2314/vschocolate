@@ -2,19 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Auth\LoginUserAction;
-use App\Http\Requests\Auth\LoginRequest;
-use App\Models\Client;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index(): Factory|Application|View
+    public function index(Request $request): Factory|Application|View
     {
-        return view('pages.dashboard');
+        // Месяц в формате Y-m, по умолчанию — текущий
+        $from = Carbon::now()->startOfMonth();
+        $month = $request->query('month');
+        if (is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            $from = Carbon::createFromFormat('!Y-m', $month);
+        }
+
+        return view('pages.dashboard', [
+            'month' => $from->format('Y-m'),
+            'from' => $from,
+            'to' => $from->copy()->endOfMonth(),
+        ]);
     }
 }

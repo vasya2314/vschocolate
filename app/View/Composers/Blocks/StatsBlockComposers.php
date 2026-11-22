@@ -4,7 +4,7 @@ namespace App\View\Composers\Blocks;
 
 use App\Models\Client;
 use App\Models\Order;
-use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 use Illuminate\View\View;
 
 class StatsBlockComposers
@@ -19,38 +19,41 @@ class StatsBlockComposers
      */
     public function compose(View $view): void
     {
+        $data = $view->getData();
+        $from = $data['from'] ?? Carbon::now()->startOfDay();
+        $to = $data['to'] ?? Carbon::now()->endOfDay();
+        $period = [$from, $to];
+
         $view->with('items', [
             [
-                'name' => 'Всего клиентов',
+                'name' => 'Новых клиентов',
                 'classes' => 'text-orange-500 bg-orange-100',
                 'icon' => 'bi bi-person-arms-up',
-                'value' => Cache::remember('stats_total_clients', 60 * 60 * 3, function() {
-                    return Client::all()->count();
-                }),
+                'value' => Client::whereBetween('created_at', $period)->count(),
             ],
             [
-                'name' => 'Выполнено заказов',
+                'name' => 'Выдано заказов на сумму',
                 'classes' => 'text-green-500 bg-green-100',
                 'icon' => 'bi bi-cash',
-                'value' => Cache::remember('stats_total_completed_orders', 60 * 60 * 3, function() {
-                    return kopToRubView(Order::where('status', Order::STATUS_COMPLETE)->sum('amount_total'));
-                }),
+                'value' => kopToRubView(
+                    Order::where('status', Order::STATUS_COMPLETE)
+                        ->whereBetween('date_issue', $period)
+                        ->sum('amount_total')
+                ),
             ],
             [
-                'name' => 'Заказов за всё время',
+                'name' => 'Заказов к выдаче',
                 'classes' => 'text-blue-500 bg-blue-100',
                 'icon' => 'bi bi-cart2',
-                'value' => Cache::remember('stats_total_orders', 60 * 60 * 3, function() {
-                    return Order::all()->count();
-                }),
+                'value' => Order::whereBetween('date_issue', $period)->count(),
             ],
             [
                 'name' => 'Заказов в ожидании',
                 'classes' => 'text-teal-500 bg-teal-100',
                 'icon' => 'bi bi-card-checklist',
-                'value' => Cache::remember('stats_total_pending_orders', 60 * 60 * 3, function() {
-                    return Order::whereIn('status', [Order::STATUS_PROGRESS, Order::STATUS_ACCEPT])->count();
-                }),
+                'value' => Order::whereIn('status', [Order::STATUS_PROGRESS, Order::STATUS_ACCEPT])
+                    ->whereBetween('date_issue', $period)
+                    ->count(),
             ],
         ]);
     }
