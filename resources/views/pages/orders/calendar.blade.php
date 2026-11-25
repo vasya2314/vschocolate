@@ -81,16 +81,18 @@
                     </div>
                     <div class="space-y-1">
                         @foreach($day['orders'] as $order)
+                            @php($productsText = $order->products->pluck('name')->implode(', ') ?: 'без товаров')
                             <a href="{{ route('order.edit', $order->id) }}"
-                               title="№{{ $order->id }} · {{ $order->client->name }} · {{ $order->amount_total_view }} · {{ $order->status_view }}"
+                               title="Заказ №{{ $order->id }}: {{ $productsText }} · {{ $order->client->name }} · {{ $order->amount_total_view }} · {{ $order->status_view }}"
                                class="flex items-center gap-1 px-1.5 py-0.5 text-xs rounded hover:bg-gray-100 {{ $order->status === \App\Models\Order::STATUS_CANCELED ? 'line-through text-gray-400' : 'text-gray-700' }}">
                                 <span class="w-2 h-2 shrink-0 rounded-full {{ $dotClasses[$order->status] ?? 'bg-gray-300' }}"></span>
                                 <span class="shrink-0 text-gray-400">{{ \Carbon\Carbon::parse($order->date_issue)->format('H:i') }}</span>
-                                <span class="truncate">{{ $order->client->name }}</span>
+                                <span class="shrink-0 font-semibold">№{{ $order->id }}</span>
+                                <span class="truncate">{{ $productsText }}</span>
                             </a>
                             @if($mode === 'week')
                                 <div class="pl-4 pb-1 text-[11px] text-gray-500">
-                                    {{ $order->amount_total_view }}
+                                    {{ $order->client->name }} · {{ $order->amount_total_view }}
                                     @if($order->debt > 0)
                                         · <span class="text-red-500">долг {{ kopToRubView($order->debt) }}</span>
                                     @endif
@@ -120,7 +122,10 @@
                     <a href="{{ route('order.edit', $order->id) }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-b last:border-b-0 border-gray-100">
                         <span class="w-2.5 h-2.5 shrink-0 rounded-full {{ $dotClasses[$order->status] ?? 'bg-gray-300' }}"></span>
                         <span class="text-gray-400">{{ \Carbon\Carbon::parse($order->date_issue)->format('H:i') }}</span>
-                        <span class="flex-1 truncate {{ $order->status === \App\Models\Order::STATUS_CANCELED ? 'line-through text-gray-400' : 'text-gray-700' }}">{{ $order->client->name }}</span>
+                        <span class="flex-1 min-w-0 {{ $order->status === \App\Models\Order::STATUS_CANCELED ? 'line-through text-gray-400' : 'text-gray-700' }}">
+                            <span class="block truncate"><b>№{{ $order->id }}</b> {{ $order->products->pluck('name')->implode(', ') ?: 'без товаров' }}</span>
+                            <span class="block truncate text-xs text-gray-400">{{ $order->client->name }}</span>
+                        </span>
                         <span class="text-gray-500 whitespace-nowrap">{{ $order->amount_total_view }}</span>
                     </a>
                 @empty

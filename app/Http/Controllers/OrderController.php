@@ -164,7 +164,10 @@ class OrderController extends Controller
             $title = Str::ucfirst($periodStart->locale('ru')->isoFormat('MMMM YYYY'));
         }
 
-        $orders = Order::with(['client' => fn ($q) => $q->withTrashed()])
+        $orders = Order::with([
+                'client' => fn ($q) => $q->withTrashed(),
+                'products' => fn ($q) => $q->withTrashed(),
+            ])
             ->whereBetween('date_issue', [$gridStart->copy()->startOfDay(), $gridEnd->copy()->endOfDay()])
             ->orderBy('date_issue')
             ->get()
