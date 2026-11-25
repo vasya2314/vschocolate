@@ -22,7 +22,7 @@ class StoreOrderAction
                 'client_id' => $fields['client_id'],
                 'description' => $fields['description'],
                 'amount_total' => $fields['amount_total'],
-                'amount_payed' => $fields['amount_total'],
+                'amount_payed' => $fields['amount_payed'],
                 'status' => $fields['status'],
             ];
 
