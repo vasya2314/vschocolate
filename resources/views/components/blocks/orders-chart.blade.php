@@ -9,7 +9,7 @@
 
     {{--
         active — индекс дня, для которого открыта подсказка.
-        Мышь: наведение. Тач: тап по столбцу или проведение пальцем по столбцам; тап мимо графика закрывает.
+        Мышь: наведение. Тач: только тап по столбцу (прокрутка подсказку не открывает); тап мимо графика закрывает.
     --}}
     <div
         class="flex gap-2"
@@ -36,12 +36,7 @@
                 {{-- Столбцы --}}
                 <div
                     class="relative flex items-end h-50 gap-1"
-                    @mouseleave="active = null"
-                    @touchmove.passive="
-                        const t = $event.touches[0];
-                        const col = document.elementFromPoint(t.clientX, t.clientY)?.closest('[data-day]');
-                        if (col) active = +col.dataset.day;
-                    "
+                    @pointerleave="if ($event.pointerType === 'mouse') active = null"
                 >
                     @foreach($days as $i => $day)
                         @php
@@ -61,8 +56,10 @@
                         <div
                             class="relative flex items-end justify-center flex-1 h-full cursor-pointer"
                             data-day="{{ $i }}"
-                            @mouseenter="active = {{ $i }}"
-                            @click="active = active === {{ $i }} ? null : {{ $i }}"
+                            {{-- Наведение — только настоящей мышью: на таче браузер эмулирует mouseenter при тапе/скролле --}}
+                            @pointerenter="if ($event.pointerType === 'mouse') active = {{ $i }}"
+                            {{-- click не срабатывает при прокрутке пальцем, поэтому на мобильных подсказка — только по тапу --}}
+                            @click="active = {{ $i }}"
                         >
                             <div
                                 class="w-full max-w-6 rounded-t-md transition duration-200 {{ $barColor }}"
