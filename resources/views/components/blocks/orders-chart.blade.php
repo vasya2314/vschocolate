@@ -8,12 +8,23 @@
     </div>
 
     {{--
-        active — индекс дня, для которого открыта подсказка.
-        Мышь: наведение. Тач: только тап по столбцу (прокрутка подсказку не открывает); тап мимо графика закрывает.
+        active — индекс дня, для которого открыта подсказка; pointer — тип последнего указателя.
+        Мышь: наведение показывает подсказку, клик открывает заказы дня.
+        Тач: первый тап показывает подсказку, повторный тап по тому же столбцу открывает заказы; тап мимо графика закрывает.
     --}}
     <div
         class="flex gap-2"
-        x-data="{ active: null }"
+        x-data="{
+            active: null,
+            pointer: 'mouse',
+            open(i, url) {
+                if (this.pointer === 'mouse' || this.active === i) {
+                    window.location.href = url;
+                } else {
+                    this.active = i;
+                }
+            },
+        }"
         @click.away="active = null"
     >
         {{-- Шкала Y — вне скролла, поэтому остаётся на месте --}}
@@ -58,8 +69,10 @@
                             data-day="{{ $i }}"
                             {{-- Наведение — только настоящей мышью: на таче браузер эмулирует mouseenter при тапе/скролле --}}
                             @pointerenter="if ($event.pointerType === 'mouse') active = {{ $i }}"
+                            @pointerdown="pointer = $event.pointerType"
                             {{-- click не срабатывает при прокрутке пальцем, поэтому на мобильных подсказка — только по тапу --}}
-                            @click="active = {{ $i }}"
+                            @click="open({{ $i }}, @js($day['url']))"
+                            title="Открыть заказы за {{ $day['label'] }}"
                         >
                             <div
                                 class="w-full max-w-6 rounded-t-md transition duration-200 {{ $barColor }}"
@@ -76,6 +89,7 @@
                                 <div class="font-semibold">{{ $day['label'] }}</div>
                                 <div>Заказов: {{ $day['count'] }}</div>
                                 <div>Сумма: {{ $day['sum'] }}</div>
+                                <div class="mt-1 text-gray-300" x-text="pointer === 'mouse' ? 'Клик — открыть заказы' : 'Нажмите ещё раз — открыть заказы'"></div>
                             </div>
                         </div>
                     @endforeach

@@ -126,6 +126,14 @@
                         <x-ui.form.select label="Включить уведомления" placeholder="Включить уведомления" :options="$tgStatusValues"  value="{{ $tgStatus }}" name="tg_status" class="mt-4"/>
                         <x-ui.form.button label="Сохранить" type="submit" class="mt-4" />
                     </form>
+                    <form action="{{ route('settings.setTgWebhook') }}" method="POST" class="mt-6 pt-4 border-t border-gray-200">
+                        @csrf
+                        <p class="mb-3 text-sm text-gray-600">
+                            Чтобы кнопки «Выполнен» и «Выдан» в сообщениях бота работали, подключите их после сохранения токена
+                            (и повторите после смены токена). Сайт должен быть доступен по HTTPS.
+                        </p>
+                        <x-ui.form.button-blue label="Подключить кнопки бота" type="submit" class="w-full" />
+                    </form>
                 </div>
             </div>
 

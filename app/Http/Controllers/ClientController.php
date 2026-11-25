@@ -14,7 +14,9 @@ use App\Http\Requests\Client\StoreRequest;
 use App\Http\Requests\Client\UpdateRequest;
 use App\Models\Client;
 use App\Models\FromPlatform;
+use App\Models\Order;
 use App\View\Components\Alert;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
@@ -68,7 +70,14 @@ class ClientController extends Controller
         $fromPlatforms = FromPlatform::all()
             ->pluck('name', 'id')->toArray();
 
-        return view('pages.clients.edit', compact('client', 'fromPlatforms'));
+        $orders = $client->orders()
+            ->with(['products' => fn ($q) => $q->withTrashed()])
+            ->orderByDesc('date_issue')
+            ->paginate(20);
+
+        $stats = $this->getClientStats($client);
+
+        return view('pages.clients.edit', compact('client', 'fromPlatforms', 'orders', 'stats'));
     }
 
     public function update(UpdateRequest $request, Client $client, UpdateClientAction $updateClientAction): RedirectResponse
@@ -108,4 +117,35 @@ class ClientController extends Controller
         return response()->json(null, 404);
     }
 
+
+    /**
+     * Сводка по заказам клиента. Отменённые заказы в суммах не учитываются.
+     */
+    private function getClientStats(Client $client): array
+    {
+        $row = $client->orders()
+            ->toBase()
+            ->selectRaw('COUNT(*) as total_count')
+            ->selectRaw('SUM(status != ?) as active_count', [Order::STATUS_CANCELED])
+            ->selectRaw('SUM(CASE WHEN status != ? THEN amount_total ELSE 0 END) as amount_total', [Order::STATUS_CANCELED])
+            ->selectRaw('SUM(CASE WHEN status != ? THEN amount_payed ELSE 0 END) as amount_payed', [Order::STATUS_CANCELED])
+            ->selectRaw('SUM(CASE WHEN status != ? AND amount_total > amount_payed THEN amount_total - amount_payed ELSE 0 END) as debt', [Order::STATUS_CANCELED])
+            ->selectRaw('MIN(date_issue) as first_date, MAX(date_issue) as last_date')
+            ->first();
+
+        $activeCount = (int) $row->active_count;
+        $amountTotal = (int) round((float) $row->amount_total);
+
+        return [
+            'total_count' => (int) $row->total_count,
+            'active_count' => $activeCount,
+            'canceled_count' => (int) $row->total_count - $activeCount,
+            'amount_total' => $amountTotal,
+            'amount_payed' => (int) round((float) $row->amount_payed),
+            'debt' => (int) round((float) $row->debt),
+            'average' => $activeCount > 0 ? (int) round($amountTotal / $activeCount) : 0,
+            'first_date' => $row->first_date ? Carbon::parse($row->first_date) : null,
+            'last_date' => $row->last_date ? Carbon::parse($row->last_date) : null,
+        ];
+    }
 }

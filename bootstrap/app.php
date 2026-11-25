@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'superAdmin' => SuperAdminMiddleware::class,
         ]);
+
+        // Telegram не передаёт CSRF-токен; запрос проверяется секретом в контроллере
+        $middleware->validateCsrfTokens(except: ['tg/webhook']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (BusinessException $e) {

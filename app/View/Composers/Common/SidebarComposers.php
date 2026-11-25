@@ -28,6 +28,11 @@ class SidebarComposers
                 'href' => route('order.index'),
             ],
             [
+                'name' => 'Календарь',
+                'icon' => 'bi bi-calendar3',
+                'href' => route('order.calendar'),
+            ],
+            [
                 'name' => 'Клиенты',
                 'icon' => 'bi bi-people',
                 'href' => route('client.index'),
