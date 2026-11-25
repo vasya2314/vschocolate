@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\View\Composers\Blocks\OrdersChartBlockComposers;
 use App\View\Composers\Blocks\StatsBlockComposers;
 use App\View\Composers\Common\SidebarComposers;
 use Illuminate\Support\Facades\Blade;
@@ -25,5 +26,6 @@ class AppServiceProvider extends ServiceProvider
     {
         View::composer('sidebar', SidebarComposers::class);
         View::composer('components.blocks.stats', StatsBlockComposers::class);
+        View::composer('components.blocks.orders-chart', OrdersChartBlockComposers::class);
     }
 }

@@ -32,5 +32,7 @@
         </p>
 
         <x-blocks.stats :from="$from" :to="$to" />
+
+        <x-blocks.orders-chart :from="$from" :to="$to" />
     </div>
 </x-layouts.main>
