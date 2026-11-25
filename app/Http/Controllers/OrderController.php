@@ -22,6 +22,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -128,11 +129,23 @@ class OrderController extends Controller
         }
     }
 
-    public function updateStatus(UpdateStatusRequest $request, Order $order, UpdateOrderAction $updateOrderAction): RedirectResponse
+    public function updateStatus(UpdateStatusRequest $request, Order $order, UpdateOrderAction $updateOrderAction): JsonResponse|RedirectResponse
     {
         $updateOrderAction->handle($request->validated(), $order);
 
-        return back()->with(Alert::TYPE_SUCCESS, 'Заказ №' . $order->id . ': статус «' . $order->status_view . '»');
+        $message = 'Заказ №' . $order->id . ': статус «' . $order->status_view . '»';
+
+        // Асинхронная смена статуса из списка
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => $order->status,
+                'label' => $order->status_view,
+                'classes' => $order->status_classes,
+                'message' => $message,
+            ]);
+        }
+
+        return back()->with(Alert::TYPE_SUCCESS, $message);
     }
 
     public function calendar(Request $request): View|Application|Factory
