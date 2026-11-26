@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>VSchocolate</title>
+  <defs>
+    <!-- Надкусанный уголок -->
+    <mask id="bite">
+      <rect width="64" height="64" fill="#fff"/>
+      <circle cx="59" cy="5" r="13" fill="#000"/>
+      <circle cx="47" cy="3" r="5" fill="#000"/>
+      <circle cx="61" cy="17" r="5" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#bite)">
+    <!-- Плитка: тёмный край и светлее грань -->
+    <rect x="2" y="2" width="60" height="60" rx="13" fill="#4a2617"/>
+    <rect x="7" y="7" width="50" height="50" rx="9" fill="#7a4428"/>
+    <rect x="7" y="7" width="50" height="50" rx="9" fill="none" stroke="#9a5d38" stroke-width="2"/>
+    <!-- Выпуклая буква V -->
+    <path d="M19 21 L32 45 L45 21" fill="none" stroke="#3b1d10" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 2)"/>
+    <path d="M19 21 L32 45 L45 21" fill="none" stroke="#e0a96d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
