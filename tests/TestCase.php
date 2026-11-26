@@ -9,6 +9,14 @@ use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Тестам не нужны собранные CSS/JS: без этого @vite падает, если нет public/build и dev-сервера (например, в CI)
+        $this->withoutVite();
+    }
+
     /**
      * Защита от случайного запуска на рабочей базе: RefreshDatabase пересоздаёт схему.
      * Разрешена только база с именем *_testing (phpunit.xml) или SQLite в памяти.
