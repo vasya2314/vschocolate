@@ -59,7 +59,7 @@
     </div>
 
     {{-- Сетка (планшет и десктоп) --}}
-    <div class="hidden md:block mb-8 overflow-hidden bg-white rounded-lg shadow-xs">
+    <div class="hidden md:block min-w-0 mb-8 overflow-hidden bg-white rounded-lg shadow-xs">
         <div class="grid grid-cols-7 text-xs font-semibold tracking-wide text-center text-gray-500 uppercase border-b bg-gray-50">
             @foreach($weekdays as $i => $weekday)
                 <div class="py-2 {{ $i >= 5 ? 'text-[#8b7bd8]' : '' }}">{{ $weekday }}</div>
@@ -107,7 +107,7 @@
 
     {{-- Список по дням (телефон) --}}
     @php($phoneDays = array_filter($days, fn ($d) => $d['in_period'] && ($d['orders']->isNotEmpty() || $d['is_today'])))
-    <div class="md:hidden mb-8 space-y-4">
+    <div class="md:hidden min-w-0 mb-8 space-y-4">
         @forelse($phoneDays as $day)
             <div class="overflow-hidden bg-white rounded-lg shadow-xs">
                 <a href="{{ route('order.index', ['date_from' => $day['date'], 'date_to' => $day['date']]) }}"

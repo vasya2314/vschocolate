@@ -9,7 +9,7 @@
 @endphp
 
 <x-layouts.main title="{{ $title }}">
-    <div>
+    <div class="min-w-0">
         <div class="flex flex-wrap items-end justify-between gap-4 mt-6 mb-6">
             <div>
                 <h2 class="text-2xl font-semibold text-gray-700">{{ $client->name }}</h2>
