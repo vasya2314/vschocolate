@@ -10,12 +10,12 @@
     </mask>
   </defs>
   <g mask="url(#bite)">
-    <!-- Плитка: тёмный край и светлее грань -->
-    <rect x="2" y="2" width="60" height="60" rx="13" fill="#4a2617"/>
-    <rect x="7" y="7" width="50" height="50" rx="9" fill="#7a4428"/>
-    <rect x="7" y="7" width="50" height="50" rx="9" fill="none" stroke="#9a5d38" stroke-width="2"/>
+    <!-- Плитка в цветах сайта: purple-800 край, purple-600 грань, purple-400 обводка -->
+    <rect x="2" y="2" width="60" height="60" rx="13" fill="#6e11b0"/>
+    <rect x="7" y="7" width="50" height="50" rx="9" fill="#9810fa"/>
+    <rect x="7" y="7" width="50" height="50" rx="9" fill="none" stroke="#c27aff" stroke-width="2"/>
     <!-- Выпуклая буква V -->
-    <path d="M19 21 L32 45 L45 21" fill="none" stroke="#3b1d10" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 2)"/>
-    <path d="M19 21 L32 45 L45 21" fill="none" stroke="#e0a96d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M19 21 L32 45 L45 21" fill="none" stroke="#5a0e91" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 2)"/>
+    <path d="M19 21 L32 45 L45 21" fill="none" stroke="#f3e8ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

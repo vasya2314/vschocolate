@@ -10,11 +10,11 @@
         @endisset
     </title>
 
-    {{-- Иконка: шоколадка с буквой V. SVG — для современных браузеров, ICO — запасной, PNG — для iOS --}}
+    {{-- Иконка: плитка шоколада с буквой V в цветах сайта (purple). SVG — для современных браузеров, ICO — запасной, PNG — для iOS --}}
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="32x32">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
-    <meta name="theme-color" content="#4a2617">
+    <meta name="theme-color" content="#9810fa">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
