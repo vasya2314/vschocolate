@@ -36,7 +36,7 @@ docker exec -w /var/www project_app vendor/bin/pest --filter "календар" 
 | `Feature/OrderCalendarTest` | сетка месяца и недели, сумма дня без отмен, навигация, заказы удалённых клиентов |
 | `Feature/ClientTest` | CRUD клиентов, нормализация телефона, поиск по телефону, статистика карточки |
 | `Feature/Dashboard/*` | все блоки главной на заранее известных данных: плашки и изменения к прошлому месяцу, выручка за год, источники, товары, повторные клиенты, дни недели, долги |
-| `Feature/TgOrdersNotificationTest` | утреннее сообщение в Telegram (через `Http::fake`), выключенные уведомления, ошибка API, расписание |
+| `Feature/TgOrdersNotificationTest` | утреннее сообщение в Telegram (через `Http::fake`), выключенные уведомления, ошибка API пишется в лог, расписание |
 | `Feature/SettingsTest` | настройки Telegram, товары и площадки |
 
 ## Хелперы

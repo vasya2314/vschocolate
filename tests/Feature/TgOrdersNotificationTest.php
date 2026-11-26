@@ -8,12 +8,16 @@ use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 
 // Утреннее уведомление app:tg-orders-notification: заказы к выдаче на сегодня и два следующих дня.
 
 beforeEach(function () {
     $this->travelTo('2026-11-18 08:00:00');
-    Http::fake(['*' => Http::response(['ok' => true, 'result' => []])]);
+    // Ответ Telegram можно переопределить в тесте: $this->tgResponse = Http::response(...)
+    $this->tgResponse = Http::response(['ok' => true, 'result' => []]);
+    Http::fake(fn () => $this->tgResponse);
 
     app(SetTgTokenAction::class)->handle('TEST-TOKEN');
     app(SetTgChatIdAction::class)->handle('-100500');
@@ -62,8 +66,13 @@ test('выключенные уведомления ничего не отпра
     Http::assertNothingSent();
 });
 
-test('ошибка Telegram не роняет команду', function () {
-    Http::fake(['*' => Http::response(['ok' => false, 'description' => 'Bad Request: chat not found'], 400)]);
+test('ошибка Telegram не роняет команду и пишется в лог', function () {
+    $this->tgResponse = Http::response(['ok' => false, 'description' => 'Bad Request: chat not found'], 400);
+
+    // Команда пишет ошибки в отдельный лог через Log::build — подменяем, чтобы не трогать storage/logs
+    $logger = Mockery::mock(LoggerInterface::class);
+    $logger->shouldReceive('error')->once()->withArgs(fn ($error) => str_contains((string) $error, 'chat not found'));
+    Log::shouldReceive('build')->once()->andReturn($logger);
 
     $this->artisan('app:tg-orders-notification')->assertSuccessful();
 
