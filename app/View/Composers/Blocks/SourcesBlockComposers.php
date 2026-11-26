@@ -2,9 +2,7 @@
 
 namespace App\View\Composers\Blocks;
 
-use App\Models\Client;
 use App\Models\FromPlatform;
-use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\View\View;
 
@@ -19,36 +17,26 @@ class SourcesBlockComposers
         $from = $data['from'] ?? Carbon::now()->startOfMonth();
         $to = $data['to'] ?? Carbon::now()->endOfMonth();
 
-        $newClients = Client::whereBetween('created_at', [$from, $to])
-            ->toBase()
-            ->selectRaw('from_platform_id, COUNT(*) as cnt')
-            ->groupBy('from_platform_id')
-            ->pluck('cnt', 'from_platform_id');
+        $periodOrders = fn ($query) => $query->notCanceled()->issuedBetween($from, $to);
 
-        $orders = Order::query()
-            ->join('clients', 'clients.id', '=', 'orders.client_id')
-            ->where('orders.status', '!=', Order::STATUS_CANCELED)
-            ->whereBetween('orders.date_issue', [$from, $to])
-            ->toBase()
-            ->selectRaw('clients.from_platform_id, COUNT(*) as cnt, SUM(orders.amount_total) as total')
-            ->groupBy('clients.from_platform_id')
-            ->get()
-            ->keyBy('from_platform_id');
+        $platforms = FromPlatform::withTrashed()
+            ->withCount(['clients as new_clients_count' => fn ($query) => $query->withTrashed()->whereBetween('created_at', [$from, $to])])
+            ->withCount(['orders as period_orders_count' => $periodOrders])
+            ->withSum(['orders as period_revenue' => $periodOrders], 'amount_total')
+            ->get();
 
-        $totalRevenue = (int) $orders->sum('total');
+        $totalRevenue = (int) $platforms->sum('period_revenue');
 
-        $rows = FromPlatform::withTrashed()->get()
+        $rows = $platforms
+            ->filter(fn (FromPlatform $platform) => $platform->new_clients_count > 0 || $platform->period_orders_count > 0)
+            ->sortByDesc('period_revenue')
+            ->values()
             ->map(fn (FromPlatform $platform) => [
                 'name' => $platform->name,
-                'clients' => (int) ($newClients[$platform->id] ?? 0),
-                'orders' => (int) ($orders->get($platform->id)->cnt ?? 0),
-                'revenue' => (int) ($orders->get($platform->id)->total ?? 0),
-            ])
-            ->filter(fn ($row) => $row['clients'] > 0 || $row['orders'] > 0)
-            ->sortByDesc('revenue')
-            ->values()
-            ->map(fn ($row) => $row + [
-                'share' => $totalRevenue > 0 ? (int) round($row['revenue'] / $totalRevenue * 100) : 0,
+                'clients' => $platform->new_clients_count,
+                'orders' => $platform->period_orders_count,
+                'revenue' => (int) $platform->period_revenue,
+                'share' => $totalRevenue > 0 ? (int) round($platform->period_revenue / $totalRevenue * 100) : 0,
             ]);
 
         $view->with([

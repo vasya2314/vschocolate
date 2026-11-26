@@ -22,20 +22,16 @@ class WeekdayLoadBlockComposers
         $from = $to->copy()->startOfMonth()->subMonthsNoOverflow(11);
 
         // Не размываем среднее днями до первого заказа
-        $firstOrder = Order::query()->where('status', '!=', Order::STATUS_CANCELED)->min('date_issue');
+        $firstOrder = Order::notCanceled()->min('date_issue');
         if ($firstOrder && Carbon::parse($firstOrder)->startOfDay()->greaterThan($from)) {
             $from = Carbon::parse($firstOrder)->startOfDay();
         }
 
-        // WEEKDAY(): 0 — понедельник … 6 — воскресенье
-        $rows = Order::query()
-            ->where('status', '!=', Order::STATUS_CANCELED)
-            ->whereBetween('date_issue', [$from, $to])
-            ->toBase()
-            ->selectRaw('WEEKDAY(date_issue) as wd, COUNT(*) as cnt, SUM(amount_total) as total')
-            ->groupBy('wd')
-            ->get()
-            ->keyBy('wd');
+        // 0 — понедельник … 6 — воскресенье
+        $byWeekday = Order::notCanceled()
+            ->issuedBetween($from, $to)
+            ->get(['date_issue', 'amount_total'])
+            ->groupBy(fn (Order $order) => Carbon::parse($order->date_issue)->dayOfWeekIso - 1);
 
         // Сколько раз каждый день недели встречается в периоде
         $occurrences = array_fill(0, 7, 0);
@@ -45,13 +41,14 @@ class WeekdayLoadBlockComposers
 
         $days = [];
         foreach (self::NAMES as $i => $name) {
-            $count = (int) ($rows->get($i)->cnt ?? 0);
+            $orders = $byWeekday->get($i, collect());
+            $count = $orders->count();
             $days[] = [
                 'name' => $name,
                 'short' => self::SHORT[$i],
                 'count' => $count,
                 'avg' => $occurrences[$i] > 0 ? $count / $occurrences[$i] : 0,
-                'sum' => (int) ($rows->get($i)->total ?? 0),
+                'sum' => (int) $orders->sum('amount_total'),
                 'is_weekend' => $i >= 5,
             ];
         }

@@ -2,8 +2,9 @@
 
 namespace App\View\Composers\Blocks;
 
-use App\Models\Client;
 use App\Models\Order;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 /**
@@ -16,40 +17,33 @@ class DebtsBlockComposers
 
     public function compose(View $view): void
     {
-        $debtors = Order::query()
+        $debtors = Order::with(['client' => fn ($query) => $query->withTrashed()])
             ->where('status', Order::STATUS_COMPLETE)
-            ->whereColumn('amount_payed', '<', 'amount_total')
-            ->toBase()
-            ->selectRaw('client_id, COUNT(*) as cnt, SUM(amount_total - amount_payed) as debt, MIN(date_issue) as oldest')
-            ->groupBy('client_id')
-            ->orderByDesc('debt')
-            ->get();
-
-        $clients = Client::withTrashed()
-            ->whereIn('id', $debtors->take(self::LIMIT)->pluck('client_id'))
+            ->underpaid()
             ->get()
-            ->keyBy('id');
+            ->groupBy('client_id')
+            ->map(fn (Collection $orders) => [
+                'client' => $orders->first()->client,
+                'count' => $orders->count(),
+                'debt' => $orders->sum('debt'),
+                'oldest' => Carbon::parse($orders->min('date_issue')),
+            ])
+            ->filter(fn (array $row) => $row['client'] !== null)
+            ->sortByDesc('debt')
+            ->values();
 
-        $expected = Order::query()
-            ->whereIn('status', [Order::STATUS_ACCEPT, Order::STATUS_PROGRESS])
-            ->whereColumn('amount_payed', '<', 'amount_total')
-            ->toBase()
-            ->selectRaw('COUNT(*) as cnt, COALESCE(SUM(amount_total - amount_payed), 0) as debt')
-            ->first();
+        $expected = Order::whereIn('status', [Order::STATUS_ACCEPT, Order::STATUS_PROGRESS])
+            ->underpaid()
+            ->get(['amount_total', 'amount_payed']);
 
         $view->with([
-            'totalDebt' => (int) $debtors->sum('debt'),
-            'debtOrders' => (int) $debtors->sum('cnt'),
+            'totalDebt' => $debtors->sum('debt'),
+            'debtOrders' => $debtors->sum('count'),
             'debtorsCount' => $debtors->count(),
-            'rows' => $debtors->take(self::LIMIT)->map(fn ($row) => [
-                'client' => $clients->get($row->client_id),
-                'count' => (int) $row->cnt,
-                'debt' => (int) $row->debt,
-                'oldest' => \Carbon\Carbon::parse($row->oldest),
-            ])->filter(fn ($row) => $row['client'] !== null)->values(),
+            'rows' => $debtors->take(self::LIMIT),
             'hidden' => max(0, $debtors->count() - self::LIMIT),
-            'expectedDebt' => (int) $expected->debt,
-            'expectedOrders' => (int) $expected->cnt,
+            'expectedDebt' => $expected->sum('debt'),
+            'expectedOrders' => $expected->count(),
         ]);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Traits\Filterable;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -105,6 +107,27 @@ class Order extends Model
     public function getShortDescriptionAttribute(): null|string
     {
         return $this->description ? Str::limit($this->description, 150, '...') : null;
+    }
+
+    /** Все заказы, кроме отменённых */
+    #[Scope]
+    protected function notCanceled(Builder $query): void
+    {
+        $query->where('status', '!=', self::STATUS_CANCELED);
+    }
+
+    /** Заказы с датой выдачи в периоде */
+    #[Scope]
+    protected function issuedBetween(Builder $query, Carbon $from, Carbon $to): void
+    {
+        $query->whereBetween('date_issue', [$from, $to]);
+    }
+
+    /** Оплаченные не полностью */
+    #[Scope]
+    protected function underpaid(Builder $query): void
+    {
+        $query->whereColumn('amount_payed', '<', 'amount_total');
     }
 
     public function client(): BelongsTo

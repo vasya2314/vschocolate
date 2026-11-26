@@ -16,25 +16,21 @@ class YearRevenueBlockComposers
         $selected = ($view->getData()['from'] ?? Carbon::now())->copy()->startOfMonth();
         $yearStart = $selected->copy()->startOfYear();
 
-        $rows = Order::query()
-            ->where('status', '!=', Order::STATUS_CANCELED)
-            ->whereBetween('date_issue', [$yearStart, $yearStart->copy()->endOfYear()])
-            ->toBase()
-            ->selectRaw('MONTH(date_issue) as m, COUNT(*) as cnt, SUM(amount_total) as total')
-            ->groupBy('m')
-            ->get()
-            ->keyBy('m');
+        $byMonth = Order::notCanceled()
+            ->issuedBetween($yearStart, $yearStart->copy()->endOfYear())
+            ->get(['date_issue', 'amount_total'])
+            ->groupBy(fn (Order $order) => Carbon::parse($order->date_issue)->month);
 
         $currentMonth = Carbon::now()->format('Y-m');
         $months = [];
         foreach (range(1, 12) as $m) {
             $date = $yearStart->copy()->month($m);
-            $row = $rows->get($m);
+            $orders = $byMonth->get($m, collect());
             $months[] = [
                 'short' => $date->copy()->locale('ru')->isoFormat('MMM'),
                 'label' => $date->copy()->locale('ru')->isoFormat('MMMM YYYY'),
-                'sum' => (int) ($row->total ?? 0),
-                'count' => (int) ($row->cnt ?? 0),
+                'sum' => (int) $orders->sum('amount_total'),
+                'count' => $orders->count(),
                 'is_selected' => $date->format('Y-m') === $selected->format('Y-m'),
                 'is_current' => $date->format('Y-m') === $currentMonth,
                 'url' => route('dashboard.index', ['month' => $date->format('Y-m')]),

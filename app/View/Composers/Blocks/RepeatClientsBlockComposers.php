@@ -21,25 +21,31 @@ class RepeatClientsBlockComposers
         $from = $data['from'] ?? Carbon::now()->startOfMonth();
         $to = $data['to'] ?? Carbon::now()->endOfMonth();
 
-        $active = fn () => Order::query()->where('status', '!=', Order::STATUS_CANCELED);
+        $notCanceled = fn ($query) => $query->notCanceled();
 
-        // client_id => число заказов и сумма за всё время
-        $allTime = $active()
-            ->toBase()
-            ->selectRaw('client_id, COUNT(*) as cnt, SUM(amount_total) as total')
-            ->groupBy('client_id')
+        $clients = Client::withTrashed()
+            ->withCount(['orders as active_orders_count' => $notCanceled])
+            ->withSum(['orders as active_orders_sum' => $notCanceled], 'amount_total')
             ->get()
-            ->keyBy('client_id');
+            ->keyBy('id');
 
-        $periodClientIds = $active()->whereBetween('date_issue', [$from, $to])->pluck('client_id');
-        $isRepeat = fn ($clientId) => ($allTime->get($clientId)->cnt ?? 0) > 1;
+        $isRepeat = fn ($clientId) => ($clients->get($clientId)?->active_orders_count ?? 0) > 1;
 
+        $periodClientIds = Order::notCanceled()->issuedBetween($from, $to)->pluck('client_id');
         $periodOrders = $periodClientIds->count();
         $repeatOrders = $periodClientIds->filter($isRepeat)->count();
         $periodClients = $periodClientIds->unique();
 
-        $top = $allTime->sortByDesc('total')->take(self::LIMIT);
-        $clients = Client::withTrashed()->whereIn('id', $top->keys())->get()->keyBy('id');
+        $top = $clients
+            ->where('active_orders_count', '>', 0)
+            ->sortByDesc('active_orders_sum')
+            ->take(self::LIMIT)
+            ->values()
+            ->map(fn (Client $client) => [
+                'client' => $client,
+                'count' => $client->active_orders_count,
+                'total' => (int) $client->active_orders_sum,
+            ]);
 
         $view->with([
             'periodOrders' => $periodOrders,
@@ -47,11 +53,7 @@ class RepeatClientsBlockComposers
             'repeatShare' => $periodOrders > 0 ? (int) round($repeatOrders / $periodOrders * 100) : 0,
             'periodClients' => $periodClients->count(),
             'repeatClients' => $periodClients->filter($isRepeat)->count(),
-            'top' => $top->map(fn ($row) => [
-                'client' => $clients->get($row->client_id),
-                'count' => (int) $row->cnt,
-                'total' => (int) $row->total,
-            ])->filter(fn ($row) => $row['client'] !== null)->values(),
+            'top' => $top,
         ]);
     }
 }

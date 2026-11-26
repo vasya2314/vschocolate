@@ -70,32 +70,24 @@ class StatsBlockComposers
     }
 
     /**
-     * Все показатели по заказам — одним запросом. Период — по дате выдачи.
+     * Все показатели по заказам периода (по дате выдачи).
      */
     private function metrics(Carbon $from, Carbon $to): array
     {
-        $row = Order::query()
-            ->whereBetween('date_issue', [$from, $to])
-            ->toBase()
-            ->selectRaw('COUNT(*) as total')
-            ->selectRaw('COALESCE(SUM(status = ?), 0) as canceled', [Order::STATUS_CANCELED])
-            ->selectRaw('COALESCE(SUM(status IN (?, ?)), 0) as pending', [Order::STATUS_ACCEPT, Order::STATUS_PROGRESS])
-            ->selectRaw('COALESCE(SUM(CASE WHEN status != ? THEN amount_total END), 0) as active_sum', [Order::STATUS_CANCELED])
-            ->selectRaw('COALESCE(SUM(CASE WHEN status = ? THEN amount_total END), 0) as completed_sum', [Order::STATUS_COMPLETE])
-            ->first();
+        $orders = Order::issuedBetween($from, $to)->get(['status', 'amount_total']);
+        $active = $orders->where('status', '!=', Order::STATUS_CANCELED);
 
-        $total = (int) $row->total;
-        $canceled = (int) $row->canceled;
-        $active = $total - $canceled;
+        $total = $orders->count();
+        $canceled = $total - $active->count();
 
         return [
             'new_clients' => Client::whereBetween('created_at', [$from, $to])->count(),
             'total' => $total,
             'canceled' => $canceled,
-            'active' => $active,
-            'pending' => (int) $row->pending,
-            'completed_sum' => (int) $row->completed_sum,
-            'avg_check' => $active > 0 ? (int) round($row->active_sum / $active) : 0,
+            'active' => $active->count(),
+            'pending' => $orders->whereIn('status', [Order::STATUS_ACCEPT, Order::STATUS_PROGRESS])->count(),
+            'completed_sum' => (int) $orders->where('status', Order::STATUS_COMPLETE)->sum('amount_total'),
+            'avg_check' => (int) round($active->avg('amount_total') ?? 0),
             'cancel_share' => $total > 0 ? $canceled / $total * 100 : 0.0,
         ];
     }

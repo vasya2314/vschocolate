@@ -3,8 +3,8 @@
 namespace App\View\Composers\Blocks;
 
 use App\Models\Order;
+use App\Models\Product;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -21,24 +21,20 @@ class TopProductsBlockComposers
         $from = $data['from'] ?? Carbon::now()->startOfMonth();
         $to = $data['to'] ?? Carbon::now()->endOfMonth();
 
-        $base = fn () => Order::query()
-            ->where('status', '!=', Order::STATUS_CANCELED)
-            ->whereBetween('date_issue', [$from, $to]);
+        $ordersCount = Order::notCanceled()->issuedBetween($from, $to)->count();
 
-        $ordersCount = $base()->count();
-
-        $rows = DB::table('order_product')
-            ->join('products', 'products.id', '=', 'order_product.product_id')
-            ->whereIn('order_product.order_id', $base()->select('orders.id'))
-            ->groupBy('products.id', 'products.name')
-            ->orderByDesc('cnt')
-            ->orderBy('products.name')
-            ->limit(self::LIMIT)
-            ->get(['products.name', DB::raw('COUNT(*) as cnt')])
-            ->map(fn ($row) => [
-                'name' => $row->name,
-                'count' => (int) $row->cnt,
-                'share' => $ordersCount > 0 ? (int) round($row->cnt / $ordersCount * 100) : 0,
+        $rows = Product::withTrashed()
+            ->withCount(['orders as period_orders_count' => fn ($query) => $query->notCanceled()->issuedBetween($from, $to)])
+            ->get()
+            ->where('period_orders_count', '>', 0)
+            ->sortBy('name')
+            ->sortByDesc('period_orders_count')
+            ->take(self::LIMIT)
+            ->values()
+            ->map(fn (Product $product) => [
+                'name' => $product->name,
+                'count' => $product->period_orders_count,
+                'share' => $ordersCount > 0 ? (int) round($product->period_orders_count / $ordersCount * 100) : 0,
             ]);
 
         $view->with([

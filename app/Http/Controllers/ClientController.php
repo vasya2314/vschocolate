@@ -123,29 +123,19 @@ class ClientController extends Controller
      */
     private function getClientStats(Client $client): array
     {
-        $row = $client->orders()
-            ->toBase()
-            ->selectRaw('COUNT(*) as total_count')
-            ->selectRaw('SUM(status != ?) as active_count', [Order::STATUS_CANCELED])
-            ->selectRaw('SUM(CASE WHEN status != ? THEN amount_total ELSE 0 END) as amount_total', [Order::STATUS_CANCELED])
-            ->selectRaw('SUM(CASE WHEN status != ? THEN amount_payed ELSE 0 END) as amount_payed', [Order::STATUS_CANCELED])
-            ->selectRaw('SUM(CASE WHEN status != ? AND amount_total > amount_payed THEN amount_total - amount_payed ELSE 0 END) as debt', [Order::STATUS_CANCELED])
-            ->selectRaw('MIN(date_issue) as first_date, MAX(date_issue) as last_date')
-            ->first();
-
-        $activeCount = (int) $row->active_count;
-        $amountTotal = (int) round((float) $row->amount_total);
+        $orders = $client->orders()->get(['status', 'amount_total', 'amount_payed', 'date_issue']);
+        $active = $orders->where('status', '!=', Order::STATUS_CANCELED);
 
         return [
-            'total_count' => (int) $row->total_count,
-            'active_count' => $activeCount,
-            'canceled_count' => (int) $row->total_count - $activeCount,
-            'amount_total' => $amountTotal,
-            'amount_payed' => (int) round((float) $row->amount_payed),
-            'debt' => (int) round((float) $row->debt),
-            'average' => $activeCount > 0 ? (int) round($amountTotal / $activeCount) : 0,
-            'first_date' => $row->first_date ? Carbon::parse($row->first_date) : null,
-            'last_date' => $row->last_date ? Carbon::parse($row->last_date) : null,
+            'total_count' => $orders->count(),
+            'active_count' => $active->count(),
+            'canceled_count' => $orders->count() - $active->count(),
+            'amount_total' => (int) $active->sum('amount_total'),
+            'amount_payed' => (int) $active->sum('amount_payed'),
+            'debt' => (int) $active->sum('debt'),
+            'average' => (int) round($active->avg('amount_total') ?? 0),
+            'first_date' => $orders->isNotEmpty() ? Carbon::parse($orders->min('date_issue')) : null,
+            'last_date' => $orders->isNotEmpty() ? Carbon::parse($orders->max('date_issue')) : null,
         ];
     }
 }
