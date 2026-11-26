@@ -76,7 +76,7 @@
                             {{ $day['day'] }}
                         </a>
                         @if($day['orders']->isNotEmpty())
-                            <span class="text-[10px] text-gray-400">{{ $day['sum'] }}</span>
+                            <span class="text-[10px] text-gray-400 whitespace-nowrap">{{ $day['sum'] }}</span>
                         @endif
                     </div>
                     <div class="space-y-1">
@@ -92,9 +92,9 @@
                             </a>
                             @if($mode === 'week')
                                 <div class="pl-4 pb-1 text-[11px] text-gray-500">
-                                    {{ $order->client->name }} · {{ $order->amount_total_view }}
-                                    @if($order->debt > 0)
-                                        · <span class="text-red-500">долг {{ kopToRubView($order->debt) }}</span>
+                                    {{ $order->client->name }} · <span class="whitespace-nowrap">{{ $order->amount_total_view }}</span>
+                                    @if($order->debt > 0 && $order->status !== \App\Models\Order::STATUS_CANCELED)
+                                        · <span class="text-red-500 whitespace-nowrap">долг {{ kopToRubView($order->debt) }}</span>
                                     @endif
                                 </div>
                             @endif
@@ -113,20 +113,26 @@
                 <a href="{{ route('order.index', ['date_from' => $day['date'], 'date_to' => $day['date']]) }}"
                    class="flex items-center justify-between px-4 py-2 text-sm font-semibold border-b
                        {{ $day['is_today'] ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-700' }}">
-                    <span>{{ $day['label'] }} @if($day['is_today']) · сегодня @endif</span>
+                    <span class="min-w-0 truncate">{{ $day['label'] }} @if($day['is_today']) · сегодня @endif</span>
                     @if($day['orders']->isNotEmpty())
-                        <span class="text-xs font-normal text-gray-500">{{ $day['orders']->count() }} · {{ $day['sum'] }}</span>
+                        <span class="ml-3 shrink-0 text-xs font-normal text-gray-500 whitespace-nowrap">{{ $day['orders']->count() }} · {{ $day['sum'] }}</span>
                     @endif
                 </a>
                 @forelse($day['orders'] as $order)
                     <a href="{{ route('order.edit', $order->id) }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-b last:border-b-0 border-gray-100">
                         <span class="w-2.5 h-2.5 shrink-0 rounded-full {{ $dotClasses[$order->status] ?? 'bg-gray-300' }}"></span>
-                        <span class="text-gray-400">{{ \Carbon\Carbon::parse($order->date_issue)->format('H:i') }}</span>
+                        <span class="shrink-0 text-gray-400">{{ \Carbon\Carbon::parse($order->date_issue)->format('H:i') }}</span>
                         <span class="flex-1 min-w-0 {{ $order->status === \App\Models\Order::STATUS_CANCELED ? 'line-through text-gray-400' : 'text-gray-700' }}">
                             <span class="block truncate"><b>№{{ $order->id }}</b> {{ $order->products->pluck('name')->implode(', ') ?: 'без товаров' }}</span>
                             <span class="block truncate text-xs text-gray-400">{{ $order->client->name }}</span>
                         </span>
-                        <span class="text-gray-500 whitespace-nowrap">{{ $order->amount_total_view }}</span>
+                        {{-- Сумма и долг не переносятся и не сжимаются --}}
+                        <span class="shrink-0 text-right whitespace-nowrap">
+                            <span class="block text-gray-500">{{ $order->amount_total_view }}</span>
+                            @if($order->debt > 0 && $order->status !== \App\Models\Order::STATUS_CANCELED)
+                                <span class="block text-xs text-red-500">долг {{ kopToRubView($order->debt) }}</span>
+                            @endif
+                        </span>
                     </a>
                 @empty
                     <p class="px-4 py-2.5 text-sm text-gray-400">Заказов нет</p>

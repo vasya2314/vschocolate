@@ -13,13 +13,19 @@ test('kopToRub возвращает рубли с копейками', function 
 });
 
 test('kopToRubView форматирует с разделителем тысяч и знаком рубля', function () {
-    expect(kopToRubView(1_234_500))->toBe('12 345 ₽')
-        ->and(kopToRubView(0))->toBe('0 ₽')
-        ->and(kopToRubView('150000'))->toBe('1 500 ₽');
+    expect(kopToRubView(1_234_500))->toBe(rub('12 345 ₽'))
+        ->and(kopToRubView(0))->toBe(rub('0 ₽'))
+        ->and(kopToRubView('150000'))->toBe(rub('1 500 ₽'));
+});
+
+test('суммы не разрываются переносом: только неразрывные пробелы', function () {
+    foreach ([kopToRubView(105_000), kopToRubView(123_456_700), kopToRubShort(150_000_000), kopToRubShort(35_000_000)] as $amount) {
+        expect($amount)->not->toContain(' ')->toContain(NBSP);
+    }
 });
 
 test('kopToRubShort даёт короткие подписи для осей', function (int $kop, string $expected) {
-    expect(kopToRubShort($kop))->toBe($expected);
+    expect(kopToRubShort($kop))->toBe(rub($expected));
 })->with([
     'рубли' => [90_000, '900 ₽'],
     'тысячи' => [35_000_000, '350 тыс ₽'],

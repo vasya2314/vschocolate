@@ -87,8 +87,8 @@ test('карточка: статистика без отменённых зак�
     $response = $this->get(route('client.edit', $client))
         ->assertOk()
         ->assertViewHas('orders', fn ($orders) => $orders->total() === 4)
-        ->assertSee('9 000 ₽')
-        ->assertSee('4 000 ₽');
+        ->assertSee(rub('9 000 ₽'))
+        ->assertSee(rub('4 000 ₽'));
 
     expect($response->viewData('stats'))
         ->total_count->toBe(4)

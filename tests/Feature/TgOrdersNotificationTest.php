@@ -43,7 +43,7 @@ test('отправляет заказы на сегодня и два следу
             && !isset($request['reply_markup'])
             && str_contains($text, '<b>18.11.2026:</b>')
             && str_contains($text, "Заказ №{$today->id} (Трюфели)")
-            && str_contains($text, 'Сумма: 7 300 ₽. (оплачено: 3 000 ₽)')
+            && str_contains($text, 'Сумма: ' . rub('7 300 ₽') . '. (оплачено: ' . rub('3 000 ₽') . ')')
             && str_contains($text, 'Статус: Принят')
             && str_contains($text, "Заказ №{$dayAfter->id}")
             && !str_contains($text, "Заказ №{$tooLate->id}")

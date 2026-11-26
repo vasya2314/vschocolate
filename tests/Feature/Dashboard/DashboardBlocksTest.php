@@ -37,9 +37,9 @@ describe('плашки', function () {
     });
 
     test('значения за месяц', function () {
-        expect($this->items['Выдано заказов на сумму']['value'])->toBe('8 000 ₽')
+        expect($this->items['Выдано заказов на сумму']['value'])->toBe(rub('8 000 ₽'))
             ->and($this->items['Заказов к выдаче']['value'])->toBe(4)        // отменённый не считается
-            ->and($this->items['Средний чек']['value'])->toBe('2 500 ₽')      // 10 000 ₽ / 4
+            ->and($this->items['Средний чек']['value'])->toBe(rub('2 500 ₽'))      // 10 000 ₽ / 4
             ->and($this->items['Заказов в ожидании']['value'])->toBe(2)
             ->and($this->items['Доля отмен']['value'])->toBe('20% (1 из 5)');
     });
