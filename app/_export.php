@@ -24,3 +24,20 @@ if (!function_exists('kopToRubView'))
         return number_format(kopToRub($amount), 0, ',', ' ') . ' ₽';
     }
 }
+
+if (!function_exists('kopToRubShort'))
+{
+    /**
+     * Короткая запись суммы для осей графиков: «1,2 млн ₽», «350 тыс ₽», «900 ₽».
+     */
+    function kopToRubShort(int|float|string $amount): string
+    {
+        $rub = (float) $amount / 100;
+        $abs = abs($rub);
+
+        if ($abs >= 1_000_000) return rtrim(rtrim(number_format($rub / 1_000_000, 1, ',', ' '), '0'), ',') . ' млн ₽';
+        if ($abs >= 1_000) return number_format($rub / 1_000, 0, ',', ' ') . ' тыс ₽';
+
+        return number_format($rub, 0, ',', ' ') . ' ₽';
+    }
+}
