@@ -18,6 +18,9 @@ class EqualsAmount implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        // Нечисловые значения отклоняет правило integer; здесь сравниваем только целые копейки
+        if (!is_int($value) || !is_int($this->amount)) return;
+
         if($value > $this->amount)
         {
             $fail('Значение не может быть больше, чем ' . kopToRub($this->amount));

@@ -10,7 +10,8 @@ if (!function_exists('kopToRub'))
 
 if (!function_exists('rubToKop'))
 {
-    function rubToKop(float $amount): int|float
+    /** Целые рубли → целые копейки */
+    function rubToKop(int $amount): int
     {
         return $amount * 100;
     }

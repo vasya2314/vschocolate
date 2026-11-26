@@ -5,10 +5,13 @@ namespace App\Http\Requests\Order;
 use App\Models\Order;
 use App\Models\Product;
 use App\Rules\EqualsAmount;
+use App\Http\Requests\Order\Concerns\PreparesAmounts;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateRequest extends FormRequest
 {
+    use PreparesAmounts;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -28,11 +31,12 @@ class UpdateRequest extends FormRequest
             'status' => 'sometimes|required|in:' . implode(',', Order::getAllStatuses()),
             'date_issue' => 'sometimes|required|date',
             'description' => 'sometimes|required|string',
-            'amount_total' => 'sometimes|required|numeric',
+            'amount_total' => 'sometimes|required|integer|min:0',
             'amount_payed' => [
                 'sometimes',
                 'required',
-                'numeric',
+                'integer',
+                'min:0',
                 new EqualsAmount($this->input('amount_total') ?? 0),
             ],
             'product_ids' => [
@@ -64,22 +68,6 @@ class UpdateRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if($this->has('amount_total'))
-        {
-            $this->merge(
-                [
-                    'amount_total' => rubToKop(str_replace(' ', '', $this->input('amount_total'))),
-                ]
-            );
-        }
-
-        if($this->has('amount_payed'))
-        {
-            $this->merge(
-                [
-                    'amount_payed' => rubToKop(str_replace(' ', '', $this->input('amount_payed'))),
-                ]
-            );
-        }
+        $this->prepareAmounts('amount_total', 'amount_payed');
     }
 }
