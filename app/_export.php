@@ -10,9 +10,14 @@ if (!function_exists('kopToRub'))
 
 if (!function_exists('rubToKop'))
 {
-    function rubToKop(float $amount): int|float
+    /**
+     * Рубли → целые копейки. Нечисловое значение возвращается как есть, чтобы его отклонила валидация.
+     */
+    function rubToKop(float|int|string $amount): int|string
     {
-        return $amount * 100;
+        if (!is_numeric($amount)) return $amount;
+
+        return (int) round((float) $amount * 100);
     }
 }
 

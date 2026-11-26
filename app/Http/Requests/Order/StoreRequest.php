@@ -28,10 +28,11 @@ class StoreRequest extends FormRequest
             'status' => 'required|in:' . implode(',', Order::getAllStatuses()),
             'date_issue' => 'required|date',
             'description' => 'required|string',
-            'amount_total' => 'required|numeric',
+            'amount_total' => 'required|integer|min:0',
             'amount_payed' => [
                 'required',
-                'numeric',
+                'integer',
+                'min:0',
                 new EqualsAmount($this->input('amount_total') ?? 0),
             ],
             'product_ids' => [

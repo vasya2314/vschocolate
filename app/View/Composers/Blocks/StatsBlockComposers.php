@@ -45,7 +45,9 @@ class StatsBlockComposers
                 'name' => 'Заказов к выдаче',
                 'classes' => 'text-blue-500 bg-blue-100',
                 'icon' => 'bi bi-cart2',
-                'value' => Order::whereBetween('date_issue', $period)->count(),
+                'value' => Order::where('status', '!=', Order::STATUS_CANCELED)
+                    ->whereBetween('date_issue', $period)
+                    ->count(),
             ],
             [
                 'name' => 'Заказов в ожидании',
