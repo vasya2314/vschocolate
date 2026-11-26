@@ -2,13 +2,14 @@ name: Tests
 
 on:
   pull_request:
-  push:
-    branches: [master]
   workflow_dispatch:
+  # Вызывается из deploy.yml перед сборкой: на пуш в master тесты запускаются там
+  workflow_call:
 
+# Новый пуш в тот же pull request отменяет устаревший прогон; прогон перед деплоем не отменяется
 concurrency:
-  group: tests-${{ github.ref }}
-  cancel-in-progress: true
+  group: tests-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   pest:

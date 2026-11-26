@@ -10,8 +10,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Деплой только при зелёных тестах: если тесты упали, build и deploy не запускаются
+  tests:
+    name: Tests
+    uses: ./.github/workflows/tests.yml
+
   build:
     name: Build
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -12,7 +12,12 @@ docker exec -w /var/www project_app vendor/bin/pest --filter "календар" 
 
 ## GitHub Actions
 
-`.github/workflows/tests.yml` запускает тесты на каждый pull request, на пуш в `master` и вручную (Run workflow).
+`.github/workflows/tests.yml` запускает тесты на каждый pull request и вручную (Run workflow).
+
+**Деплой только при зелёных тестах.** `deploy.yml` вызывает `tests.yml` первым заданием (`workflow_call`),
+у сборки стоит `needs: tests`. Если тесты упали — Build и Deploy не запускаются (сервер не трогается:
+ни `artisan down`, ни миграций), а весь запуск «Build & Deploy» завершается с ошибкой.
+
 - Своя временная **MySQL 8.0** (service container) с базой `lara_docker_testing` — живёт только во время прогона.
 - PHP 8.4, `composer install`, `.env` из `.env.example` + `php artisan key:generate`, затем `composer test`.
 - Прод-секретов в workflow нет; фронтенд не собирается — тесты вызывают `withoutVite()`.
