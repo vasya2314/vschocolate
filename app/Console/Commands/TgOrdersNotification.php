@@ -2,25 +2,60 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\TgNotification\GetTgChatIdAction;
+use App\Actions\TgNotification\GetTgStatusAction;
+use App\Actions\TgNotification\GetTgTokenAction;
 use App\Actions\TgNotification\PrepareMessageAction;
-use App\Services\TgBot;
+use App\Actions\TgNotification\SendNotificationAction;
+use App\Constants\TgStatus;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 
 class TgOrdersNotification extends Command
 {
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
     protected $signature = 'app:tg-orders-notification';
 
-    protected $description = 'TG: заказы к выдаче на ближайшие дни с кнопками смены статуса';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'TG orders notification';
 
-    /** Сегодня + 2 дня (последний день не включается) */
-    public const DAYS = 3;
+    private LoggerInterface $logger;
 
-    public function handle(TgBot $tgBot, PrepareMessageAction $prepareMessageAction): void
+    /**
+     * Execute the console command.
+     */
+    public function handle(
+        SendNotificationAction $sendNotificationAction,
+        PrepareMessageAction $prepareMessageAction,
+
+        GetTgChatIdAction $getTgChatIdAction,
+        GetTgTokenAction $getTgTokenAction,
+        GetTgStatusAction $getTgStatusAction,
+    ): void
     {
-        if (!$tgBot->isEnabled()) return;
+        if($getTgStatusAction->handle() == TgStatus::DISABLE) exit();
 
-        $message = $prepareMessageAction->handle(self::DAYS);
+        $this->logger = Log::build([
+            'driver' => 'single',
+            'path' => storage_path('logs/tg-notify.log'),
+        ]);
 
-        $tgBot->notify($message['text'], $message['keyboard']);
+        // 2 + 1 потому что последний день не включается
+        $message = $prepareMessageAction->handle(3);
+
+        try {
+            $sendNotificationAction->handle($message, $getTgChatIdAction->handle(), $getTgTokenAction->handle());
+        } catch (\Exception $e) {
+            $this->logger->error($e);
+        }
     }
 }

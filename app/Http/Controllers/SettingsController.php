@@ -14,7 +14,6 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\TgSettings\TgSettingsRequest;
 use App\Models\FromPlatform;
 use App\Models\Product;
-use App\Services\TgBot;
 use App\View\Components\Alert;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -67,18 +66,6 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return back()->with(Alert::TYPE_ERROR, $e->getMessage())
                 ->withInput();
-        }
-    }
-
-    public function setTgWebhook(TgBot $tgBot): RedirectResponse
-    {
-        try {
-            $tgBot->setWebhook(route('tg.webhook'));
-
-            return redirect()->route('settings.index')
-                ->with(Alert::TYPE_SUCCESS, 'Кнопки бота подключены');
-        } catch (\Exception $e) {
-            return back()->with(Alert::TYPE_ERROR, 'Не удалось подключить кнопки бота: ' . $e->getMessage());
         }
     }
 }
