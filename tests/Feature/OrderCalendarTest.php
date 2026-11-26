@@ -56,7 +56,7 @@ test('сумма дня без отменённых заказов', function ()
     $days = calendarDays($this, route('order.calendar'));
 
     expect($days['2026-11-20']['orders'])->toHaveCount(2)
-        ->and($days['2026-11-20']['sum'])->toBe('3 000 ₽');
+        ->and($days['2026-11-20']['sum'])->toBe(rub('3 000 ₽'));
 });
 
 test('неделя показывает только текущую неделю', function () {

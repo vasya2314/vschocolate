@@ -22,3 +22,12 @@ function composeBlock(string $name, array $data = []): array
 
     return $view->getData();
 }
+
+/**
+ * Сумма в формате приложения: «12 345 ₽» → с неразрывными пробелами, как выводит kopToRubView().
+ * Позволяет писать ожидания в тестах привычно, с обычными пробелами.
+ */
+function rub(string $amount): string
+{
+    return str_replace(' ', NBSP, $amount);
+}
