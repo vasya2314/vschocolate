@@ -11,7 +11,7 @@ abstract class TestCase extends BaseTestCase
 {
     /**
      * Защита от случайного запуска на рабочей базе: RefreshDatabase пересоздаёт схему.
-     * Разрешены только SQLite в памяти (phpunit.xml) или база с именем *_testing.
+     * Разрешена только база с именем *_testing (phpunit.xml) или SQLite в памяти.
      * setUpTraits() вызывается после создания приложения, но до запуска трейтов.
      */
     protected function setUpTraits()

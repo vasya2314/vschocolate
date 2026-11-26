@@ -12,12 +12,31 @@ docker exec -w /var/www project_app vendor/bin/pest --filter "календар" 
 
 ## База данных
 
-- Тесты работают на **SQLite в памяти** (`phpunit.xml`): отдельная база не нужна, каждый запуск начинается с чистой схемы.
-- Feature-тесты используют `RefreshDatabase`: миграции прогоняются один раз, каждый тест идёт в транзакции.
-- Код приложения должен оставаться переносимым между MySQL (прод) и SQLite (тесты): без MySQL-only функций
-  вроде `FIELD()`, `UNIX_TIMESTAMP()`, `MONTH()`. Пример — scope `Order::orderedForList()` на стандартном `CASE`.
-- **Защита рабочей базы:** `Tests\TestCase::setUpTraits()` останавливает тесты, если они подключены не к SQLite в памяти
-  и не к базе `*_testing` (например, если закэширован конфиг — тогда выполните `php artisan config:clear`).
+- Тесты работают с **отдельной MySQL-базой `lara_docker_testing`** в контейнере `db` (см. `phpunit.xml`).
+  `RefreshDatabase` **пересоздаёт её схему** (удаляет все таблицы), каждый тест идёт в транзакции.
+- Базу нужно создать один раз на машине разработчика (на проде — не нужно):
+
+  ```bash
+  docker exec project_db mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS lara_docker_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+  ```
+
+- Код приложения при этом переносим между MySQL и SQLite (без `FIELD()`, `UNIX_TIMESTAMP()`, `MONTH()`):
+  при желании тесты можно перевести на SQLite в памяти, поменяв две строки в `phpunit.xml`.
+
+## Как тесты защищены от рабочих баз
+
+| Защита | Что даёт |
+|---|---|
+| `force="true"` у `DB_CONNECTION` / `DB_DATABASE` в `phpunit.xml` | значения из `phpunit.xml` важнее `.env`: тесты не возьмут базу из `.env` |
+| `Tests\TestCase::setUpTraits()` | до пересоздания схемы проверяет имя базы: не `*_testing` (и не SQLite в памяти) — тесты останавливаются |
+| `composer test` начинает с `config:clear` | при закэшированном конфиге (`config:cache`) Laravel игнорирует `phpunit.xml`; сброс кэша это убирает, а если кэш всё же есть — сработает проверка выше |
+| Деплой (`.github/workflows/deploy.yml`) | папка `tests/` не попадает в релиз (`--exclude='./tests'`), Pest/PHPUnit на прод не ставятся (`composer install --no-dev`) — на проде тесты запустить нечем |
+
+**Правила:**
+- никогда не прописывайте доступ к прод-базе в локальный `.env` и не создавайте `.env.testing` с прод-доступом;
+- не запускайте тесты на сервере (там их и нет);
+- если тесты появятся в CI (GitHub Actions) — только со своей временной MySQL (service container), без прод-секретов;
+- перед деплоем с миграциями делайте резервную копию прод-базы — миграции идут на прод при каждом деплое.
 
 ## Что покрыто
 

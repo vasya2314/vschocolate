@@ -22,9 +22,13 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- Тесты работают на SQLite в памяти: база создаётся заново для каждого запуска -->
-        <env name="DB_CONNECTION" value="sqlite" force="true"/>
-        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <!--
+            Отдельная MySQL-база для тестов (контейнер db). Тесты ПЕРЕСОЗДАЮТ её схему (migrate:fresh).
+            force="true" — значения отсюда важнее .env, поэтому тесты не возьмут рабочую базу из .env.
+            Дополнительно Tests\TestCase останавливает тесты, если имя базы не заканчивается на _testing.
+        -->
+        <env name="DB_CONNECTION" value="mysql" force="true"/>
+        <env name="DB_DATABASE" value="lara_docker_testing" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

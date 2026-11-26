@@ -4,8 +4,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /*
-| Feature-тесты работают на SQLite в памяти (см. phpunit.xml): RefreshDatabase прогоняет миграции,
-| каждый тест идёт в транзакции. Tests\TestCase не даёт запуститься на рабочей базе.
+| Feature-тесты работают с отдельной MySQL-базой lara_docker_testing (см. phpunit.xml);
+| RefreshDatabase пересоздаёт её схему, а Tests\TestCase не даёт запуститься на другой базе.
 */
 pest()->extend(TestCase::class)->use(RefreshDatabase::class)->in('Feature');
 
