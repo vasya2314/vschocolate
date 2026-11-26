@@ -28,12 +28,11 @@ class UpdateRequest extends FormRequest
             'status' => 'sometimes|required|in:' . implode(',', Order::getAllStatuses()),
             'date_issue' => 'sometimes|required|date',
             'description' => 'sometimes|required|string',
-            'amount_total' => 'sometimes|required|integer|min:0',
+            'amount_total' => 'sometimes|required|numeric',
             'amount_payed' => [
                 'sometimes',
                 'required',
-                'integer',
-                'min:0',
+                'numeric',
                 new EqualsAmount($this->input('amount_total') ?? 0),
             ],
             'product_ids' => [

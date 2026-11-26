@@ -46,12 +46,6 @@ class Order extends Model
         'status'
     ];
 
-    /** Суммы хранятся в целых копейках */
-    protected $casts = [
-        'amount_total' => 'integer',
-        'amount_payed' => 'integer',
-    ];
-
     protected $attributes = [
         'status' => self::STATUS_ACCEPT,
     ];
@@ -99,7 +93,7 @@ class Order extends Model
     /** Недоплата по заказу в копейках */
     public function getDebtAttribute(): int
     {
-        return max(0, $this->amount_total - $this->amount_payed);
+        return max(0, (int) round($this->amount_total - $this->amount_payed));
     }
 
     public function getShortDescriptionAttribute(): null|string
