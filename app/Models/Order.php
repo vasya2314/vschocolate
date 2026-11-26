@@ -130,6 +130,24 @@ class Order extends Model
         $query->whereColumn('amount_payed', '<', 'amount_total');
     }
 
+    /**
+     * Порядок списка заказов (стандартный SQL — работает и в MySQL, и в SQLite):
+     * 1) удалённые — в конце;
+     * 2) сначала «Выполнен», затем «Принят», затем остальные;
+     * 3) «Выполнен» и «Принят» — по возрастанию даты выдачи (ближайшие сверху), остальные — по убыванию.
+     */
+    #[Scope]
+    protected function orderedForList(Builder $query): void
+    {
+        $active = [self::STATUS_PROGRESS, self::STATUS_ACCEPT];
+
+        $query
+            ->orderByRaw('CASE WHEN deleted_at IS NULL THEN 0 ELSE 1 END')
+            ->orderByRaw('CASE status WHEN ? THEN 0 WHEN ? THEN 1 ELSE 2 END', $active)
+            ->orderByRaw('CASE WHEN status IN (?, ?) THEN date_issue END ASC', $active)
+            ->orderByRaw('CASE WHEN status NOT IN (?, ?) THEN date_issue END DESC', $active);
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

@@ -75,6 +75,27 @@ describe('список и фильтры', function () {
     });
 });
 
+test('сортировка: «Выполнен», затем «Принят» — по возрастанию даты; остальные — по убыванию; удалённые в конце', function () {
+    $make = fn (string $status, string $date) => Order::factory()->for($this->client)->create(['status' => $status, 'date_issue' => $date]);
+
+    $completeOld = $make(Order::STATUS_COMPLETE, '2026-10-01 10:00:00');
+    $acceptLate = $make(Order::STATUS_ACCEPT, '2026-11-30 10:00:00');
+    $progressLate = $make(Order::STATUS_PROGRESS, '2026-11-29 10:00:00');
+    $canceledNew = $make(Order::STATUS_CANCELED, '2026-11-15 10:00:00');
+    $acceptEarly = $make(Order::STATUS_ACCEPT, '2026-11-20 10:00:00');
+    $completeNew = $make(Order::STATUS_COMPLETE, '2026-11-10 10:00:00');
+    $progressEarly = $make(Order::STATUS_PROGRESS, '2026-11-21 10:00:00');
+    $deletedAccept = $make(Order::STATUS_ACCEPT, '2026-11-01 10:00:00');
+    $deletedAccept->delete();
+
+    $this->get(route('order.index'))->assertViewHas('orders', fn ($orders) => orderIds($orders) === [
+        $progressEarly->id, $progressLate->id,  // «Выполнен» — ближайшие к выдаче сверху
+        $acceptEarly->id, $acceptLate->id,      // «Принят»
+        $canceledNew->id, $completeNew->id, $completeOld->id, // остальные — новые сверху
+        $deletedAccept->id,                     // удалённые — в самом конце
+    ]);
+});
+
 describe('создание', function () {
     test('для существующего клиента, суммы в копейках', function () {
         $this->post(route('order.store'), ($this->orderData)())
