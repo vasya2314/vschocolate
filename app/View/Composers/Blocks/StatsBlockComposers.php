@@ -148,7 +148,7 @@ class StatsBlockComposers
     }
 
     /**
-     * Изменение доли в процентных пунктах. Рост доли отмен — плохо (красный).
+     * Изменение доли: показываем прошлое значение. Рост доли отмен — плохо (красный).
      */
     private function pointsDelta(float $current, float $previous, bool $hasPrevious, string $prevLabel): ?array
     {
@@ -158,10 +158,13 @@ class StatsBlockComposers
 
         $diff = round($current - $previous, 1);
 
+        // «▼ было 7,8% в прошлом месяце» — понятнее, чем разница в процентных пунктах
         return [
-            'text' => $this->arrow($diff) . ' ' . $this->formatNumber(abs($diff)) . ' п.п.',
+            'text' => $this->arrow($diff) . ' было ' . $this->formatPercent($previous),
+            'suffix' => 'в прошлом месяце',
             'tone' => $diff > 0 ? 'bad' : ($diff < 0 ? 'good' : 'neutral'),
-            'title' => 'За ' . $prevLabel . ': ' . $this->formatPercent($previous),
+            'title' => 'За ' . $prevLabel . ': ' . $this->formatPercent($previous)
+                . ' (изменение: ' . ($diff > 0 ? '+' : ($diff < 0 ? '−' : '')) . $this->formatNumber(abs($diff)) . ' п.п.)',
         ];
     }
 

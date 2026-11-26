@@ -28,7 +28,7 @@
                         >
                             {{ $item['delta']['text'] }}
                             @if($item['delta']['text'] !== '—')
-                                <span class="text-gray-400">к прошлому месяцу</span>
+                                <span class="text-gray-400">{{ $item['delta']['suffix'] ?? 'к прошлому месяцу' }}</span>
                             @endif
                         </p>
                     @endif
