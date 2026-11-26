@@ -6,6 +6,7 @@
     <x-ui.title.h-2 label="{{ $title }}" class="mt-6" />
     <div class="md:flex">
         <x-ui.form.button-a href="{{ route('order.create') }}" label="Создать заказ" class="py-3" />
+        <x-ui.form.button-blue-a href="{{ route('order.calendar') }}" label="Календарь" class="py-3 mt-4 w-full md:ml-4 md:mt-0 md:w-max" />
         <x-ui.form.button-blue @click="toggleFilter" type="button" label="Открыть фильтр" class="py-3 mt-4 w-full md:ml-4 md:mt-0 md:w-max" />
 
         @if(!empty(request()->except('page')))
@@ -44,7 +45,11 @@
                             <td class="px-4 py-3 text-sm whitespace-nowrap
                                 @if(!is_null($order->client->deleted_at)) {{ 'text-red-600' }} @endif
                             ">
-                                <p class="font-semibold">{{ $order->client->name }}</p>
+                                @if(is_null($order->client->deleted_at))
+                                    <a href="{{ route('client.edit', $order->client->id) }}" class="font-semibold hover:text-purple-600 hover:underline">{{ $order->client->name }}</a><br>
+                                @else
+                                    <p class="font-semibold">{{ $order->client->name }}</p>
+                                @endif
                                 {{ $order->client->phone_view }}
                             </td>
                             <td class="px-4 py-3 text-sm min-w-[200px]">
@@ -67,15 +72,8 @@
                             <td class="px-4 py-3 text-sm whitespace-nowrap">
                                 {{ $order->amount_payed_view }}
                             </td>
-                            <td class="px-4 py-3 text-xs">
-                                <span class="px-2 py-1 font-semibold leading-tight rounded-full
-                                    @if($order->status == \App\Models\Order::STATUS_ACCEPT) {{ 'text-orange-700 bg-orange-100' }} @endif
-                                    @if($order->status == \App\Models\Order::STATUS_CANCELED) {{ 'text-red-700 bg-red-100' }} @endif
-                                    @if($order->status == \App\Models\Order::STATUS_PROGRESS) {{ 'text-gray-700 bg-gray-100' }} @endif
-                                    @if($order->status == \App\Models\Order::STATUS_COMPLETE) {{ 'text-green-700 bg-green-100' }} @endif
-                                ">
-                                    {{ $order->status_view }}
-                                </span>
+                            <td class="px-4 py-3 text-xs whitespace-nowrap">
+                                <x-orders.status :order="$order" />
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 {{ $order->created_at_view }}
@@ -134,5 +132,19 @@
         class="mb-4"
         multiple
         :value="request('products')"
+    />
+    <x-ui.form.input
+        label="Дата выдачи с"
+        type="date"
+        name="date_from"
+        class="mb-4"
+        value="{{ request('date_from') }}"
+    />
+    <x-ui.form.input
+        label="Дата выдачи по"
+        type="date"
+        name="date_to"
+        class="mb-4"
+        value="{{ request('date_to') }}"
     />
 </x-layouts.filter>

@@ -38,6 +38,12 @@ class IndexRequest extends FormRequest
                     ->pluck('id')->toArray()
                 )
             ],
+            'date_from' => 'sometimes|date_format:Y-m-d',
+            'date_to' => array_filter([
+                'sometimes',
+                'date_format:Y-m-d',
+                $this->filled('date_from') ? 'after_or_equal:date_from' : null,
+            ]),
         ];
     }
 
@@ -46,6 +52,8 @@ class IndexRequest extends FormRequest
         return [
             'status' => 'статус',
             'products' => 'товары',
+            'date_from' => 'дата выдачи с',
+            'date_to' => 'дата выдачи по',
         ];
     }
 

@@ -3,7 +3,7 @@
 )
 
 <x-layouts.main title="{{ $title }}">
-    <div>
+    <div class="min-w-0">
         <x-ui.title.h-2 label="{{ $title }}" class="mt-6" />
 
         <form
@@ -34,5 +34,16 @@
         <x-blocks.stats :from="$from" :to="$to" />
 
         <x-blocks.orders-chart :from="$from" :to="$to" />
+
+        <x-blocks.year-revenue :from="$from" :to="$to" />
+
+        <div class="grid gap-6 mb-8 lg:grid-cols-2">
+            <x-blocks.sources :from="$from" :to="$to" />
+            <x-blocks.top-products :from="$from" :to="$to" />
+            <x-blocks.repeat-clients :from="$from" :to="$to" />
+            <x-blocks.weekday-load :from="$from" :to="$to" />
+        </div>
+
+        <x-blocks.debts />
     </div>
 </x-layouts.main>

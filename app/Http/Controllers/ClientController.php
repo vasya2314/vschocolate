@@ -14,7 +14,9 @@ use App\Http\Requests\Client\StoreRequest;
 use App\Http\Requests\Client\UpdateRequest;
 use App\Models\Client;
 use App\Models\FromPlatform;
+use App\Models\Order;
 use App\View\Components\Alert;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
@@ -68,7 +70,14 @@ class ClientController extends Controller
         $fromPlatforms = FromPlatform::all()
             ->pluck('name', 'id')->toArray();
 
-        return view('pages.clients.edit', compact('client', 'fromPlatforms'));
+        $orders = $client->orders()
+            ->with(['products' => fn ($q) => $q->withTrashed()])
+            ->orderByDesc('date_issue')
+            ->paginate(20);
+
+        $stats = $this->getClientStats($client);
+
+        return view('pages.clients.edit', compact('client', 'fromPlatforms', 'orders', 'stats'));
     }
 
     public function update(UpdateRequest $request, Client $client, UpdateClientAction $updateClientAction): RedirectResponse
@@ -108,4 +117,25 @@ class ClientController extends Controller
         return response()->json(null, 404);
     }
 
+
+    /**
+     * Сводка по заказам клиента. Отменённые заказы в суммах не учитываются.
+     */
+    private function getClientStats(Client $client): array
+    {
+        $orders = $client->orders()->get(['status', 'amount_total', 'amount_payed', 'date_issue']);
+        $active = $orders->where('status', '!=', Order::STATUS_CANCELED);
+
+        return [
+            'total_count' => $orders->count(),
+            'active_count' => $active->count(),
+            'canceled_count' => $orders->count() - $active->count(),
+            'amount_total' => (int) $active->sum('amount_total'),
+            'amount_payed' => (int) $active->sum('amount_payed'),
+            'debt' => (int) $active->sum('debt'),
+            'average' => (int) round($active->avg('amount_total') ?? 0),
+            'first_date' => $orders->isNotEmpty() ? Carbon::parse($orders->min('date_issue')) : null,
+            'last_date' => $orders->isNotEmpty() ? Carbon::parse($orders->max('date_issue')) : null,
+        ];
+    }
 }

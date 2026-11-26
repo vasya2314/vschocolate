@@ -35,6 +35,7 @@ class OrdersChartBlockComposers
                 'sum' => kopToRubView((int) round($dayOrders->sum('amount_total'))),
                 'is_today' => $key === $today,
                 'is_weekend' => $date->isWeekend(),
+                'url' => route('order.index', ['date_from' => $key, 'date_to' => $key]),
             ];
         }
 

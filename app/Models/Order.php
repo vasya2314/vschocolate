@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Traits\Filterable;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +29,14 @@ class Order extends Model
         self::STATUS_CANCELED => 'Отменен',
     ];
 
+    /** Цвета бейджа статуса (Tailwind) */
+    private const STATUS_CLASSES = [
+        self::STATUS_ACCEPT => 'text-orange-700 bg-orange-100',
+        self::STATUS_PROGRESS => 'text-gray-700 bg-gray-100',
+        self::STATUS_COMPLETE => 'text-green-700 bg-green-100',
+        self::STATUS_CANCELED => 'text-red-700 bg-red-100',
+    ];
+
     protected $table = 'orders';
 
     protected $fillable = [
@@ -36,6 +46,12 @@ class Order extends Model
         'amount_total',
         'amount_payed',
         'status'
+    ];
+
+    /** Суммы хранятся в целых копейках */
+    protected $casts = [
+        'amount_total' => 'integer',
+        'amount_payed' => 'integer',
     ];
 
     protected $attributes = [
@@ -77,9 +93,41 @@ class Order extends Model
         return self::STATUSES[$this->status];
     }
 
+    public function getStatusClassesAttribute(): string
+    {
+        return self::STATUS_CLASSES[$this->status] ?? '';
+    }
+
+    /** Недоплата по заказу в копейках */
+    public function getDebtAttribute(): int
+    {
+        return max(0, $this->amount_total - $this->amount_payed);
+    }
+
     public function getShortDescriptionAttribute(): null|string
     {
         return $this->description ? Str::limit($this->description, 150, '...') : null;
+    }
+
+    /** Все заказы, кроме отменённых */
+    #[Scope]
+    protected function notCanceled(Builder $query): void
+    {
+        $query->where('status', '!=', self::STATUS_CANCELED);
+    }
+
+    /** Заказы с датой выдачи в периоде */
+    #[Scope]
+    protected function issuedBetween(Builder $query, Carbon $from, Carbon $to): void
+    {
+        $query->whereBetween('date_issue', [$from, $to]);
+    }
+
+    /** Оплаченные не полностью */
+    #[Scope]
+    protected function underpaid(Builder $query): void
+    {
+        $query->whereColumn('amount_payed', '<', 'amount_total');
     }
 
     public function client(): BelongsTo
