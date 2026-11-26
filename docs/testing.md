@@ -10,6 +10,13 @@ docker exec -w /var/www project_app vendor/bin/pest      # напрямую
 docker exec -w /var/www project_app vendor/bin/pest --filter "календар"   # по названию
 ```
 
+## GitHub Actions
+
+`.github/workflows/tests.yml` запускает тесты на каждый pull request, на пуш в `master` и вручную (Run workflow).
+- Своя временная **MySQL 8.0** (service container) с базой `lara_docker_testing` — живёт только во время прогона.
+- PHP 8.4, `composer install`, `.env` из `.env.example` + `php artisan key:generate`, затем `composer test`.
+- Прод-секретов в workflow нет; фронтенд не собирается — тесты вызывают `withoutVite()`.
+
 ## База данных
 
 - Тесты работают с **отдельной MySQL-базой `lara_docker_testing`** в контейнере `db` (см. `phpunit.xml`).
