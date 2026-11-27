@@ -7,3 +7,4 @@ include __DIR__ . '/web/SettingsRoutes.php';
 include __DIR__ . '/web/FromPlatformRoutes.php';
 include __DIR__ . '/web/OrderRoutes.php';
 include __DIR__ . '/web/ProductRoutes.php';
+include __DIR__ . '/web/ProfileRoutes.php';
