@@ -52,7 +52,7 @@
                         <li class="flex">
                             <a
                                 class="inline-flex items-center w-full px-2 py-1 text-sm font-semibold transition-colors duration-150 rounded-md hover:bg-gray-100 hover:text-gray-800"
-                                href="#"
+                                href="{{ route('profile.edit') }}"
                             >
                                 <i class="bi bi-person mr-3 text-lg"></i>
                                 <span>Профиль</span>
