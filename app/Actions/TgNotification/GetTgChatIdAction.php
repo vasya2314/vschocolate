@@ -2,7 +2,7 @@
 
 namespace App\Actions\TgNotification;
 
-use Illuminate\Support\Facades\Cache;
+use App\Models\Setting;
 
 class GetTgChatIdAction
 {
@@ -10,6 +10,6 @@ class GetTgChatIdAction
 
     public function handle(): mixed
     {
-        return Cache::driver('database')->get($this->key);
+        return Setting::getValue($this->key);
     }
 }
